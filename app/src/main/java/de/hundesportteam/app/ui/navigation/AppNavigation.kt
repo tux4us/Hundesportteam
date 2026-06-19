@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,9 @@ import de.hundesportteam.app.ui.blog.BlogViewModel
 import de.hundesportteam.app.ui.detail.ContentDetailScreen
 import de.hundesportteam.app.ui.pages.PageViewModel
 import de.hundesportteam.app.ui.pages.PagesScreen
+import de.hundesportteam.app.ui.parcour.ElementTemplateManagerScreen
+import de.hundesportteam.app.ui.parcour.ParcourEditorScreen
+import de.hundesportteam.app.ui.parcour.ParcourListScreen
 import de.hundesportteam.app.ui.training.TrainingScreen
 import de.hundesportteam.app.ui.training.TrainingViewModel
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +51,11 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Blog : Screen("blog", "Blog", Icons.Default.Article)
     object Pages : Screen("pages", "Verein", Icons.Default.Home)
     object Training : Screen("training", "Training", Icons.Default.FitnessCenter)
+    object Parcour : Screen("parcour", "Parcour", Icons.Default.Route)
+    object ParcourEditor : Screen("parcour_editor?id={id}", "Parcour-Editor", Icons.Default.Route) {
+        fun createRoute(id: Long? = null) = if (id != null) "parcour_editor?id=$id" else "parcour_editor"
+    }
+    object TemplateManager : Screen("template_manager", "Vorlagen", Icons.Default.Route)
     object Detail : Screen("detail/{type}/{id}/{title}", "Detail", Icons.Default.Info) {
         fun createRoute(type: String, id: Int, title: String) = "detail/$type/$id/$title"
     }
@@ -58,7 +67,7 @@ fun AppNavigation(
     preferencesManager: PreferencesManager
 ) {
     val navController = rememberNavController()
-    val items = listOf(Screen.Blog, Screen.Pages, Screen.Training)
+    val items = listOf(Screen.Blog, Screen.Pages, Screen.Training, Screen.Parcour)
 
     Scaffold(
         bottomBar = {
@@ -132,6 +141,41 @@ fun AppNavigation(
                 )
             }
 
+            composable(Screen.Parcour.route) {
+                ParcourListScreen(
+                    onParcourClick = { id ->
+                        navController.navigate(Screen.ParcourEditor.createRoute(id))
+                    },
+                    onCreateNewClick = {
+                        navController.navigate(Screen.ParcourEditor.createRoute())
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.ParcourEditor.route,
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    }
+                )
+            ) { backStackEntry ->
+                val rawId = backStackEntry.arguments?.getLong("id") ?: -1L
+                ParcourEditorScreen(
+                    parcourId = if (rawId == -1L) null else rawId,
+                    onBackClick = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() },
+                    onManageTemplatesClick = { navController.navigate(Screen.TemplateManager.route) }
+                )
+            }
+
+            composable(Screen.TemplateManager.route) {
+                ElementTemplateManagerScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
             composable(
                 route = Screen.Detail.route,
                 arguments = listOf(
@@ -159,7 +203,7 @@ fun AppNavigation(
 private fun shouldShowBottomBar(navController: NavHostController): Boolean {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    return currentRoute in listOf(Screen.Blog.route, Screen.Pages.route, Screen.Training.route)
+    return currentRoute in listOf(Screen.Blog.route, Screen.Pages.route, Screen.Training.route, Screen.Parcour.route)
 }
 
 @Composable

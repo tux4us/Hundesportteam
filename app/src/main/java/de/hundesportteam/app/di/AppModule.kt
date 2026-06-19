@@ -11,10 +11,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.hundesportteam.app.data.local.AppDatabase
 import de.hundesportteam.app.data.local.dao.BlogPostDao
+import de.hundesportteam.app.data.local.dao.ElementTemplateDao
 import de.hundesportteam.app.data.local.dao.PageDao
+import de.hundesportteam.app.data.local.dao.ParcourDao
 import de.hundesportteam.app.data.local.dao.TrainingPageDao
 import de.hundesportteam.app.data.remote.WordPressApiService
+import de.hundesportteam.app.data.repository.ElementTemplateRepository
 import de.hundesportteam.app.data.repository.PageRepository
+import de.hundesportteam.app.data.repository.ParcourRepository
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -100,6 +104,30 @@ object AppModule {
     @Singleton
     fun provideTrainingPageDao(database: AppDatabase): TrainingPageDao {
         return database.trainingPageDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideParcourDao(database: AppDatabase): ParcourDao {
+        return database.parcourDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideElementTemplateDao(database: AppDatabase): ElementTemplateDao {
+        return database.elementTemplateDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideParcourRepository(parcourDao: ParcourDao): ParcourRepository {
+        return ParcourRepository(parcourDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideElementTemplateRepository(elementTemplateDao: ElementTemplateDao): ElementTemplateRepository {
+        return ElementTemplateRepository(elementTemplateDao)
     }
 
     @Provides
